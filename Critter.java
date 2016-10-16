@@ -12,6 +12,8 @@
  */
 package assignment4;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 /* see the PDF for descriptions of the methods and fields in this class
@@ -225,11 +227,17 @@ public abstract class Critter {
 	 * upper. For example, if craig is supplied instead of Craig, an error is thrown instead of
 	 * an Exception.)	 * @param critter_class_name
 	 * @throws InvalidCritterException
+	 * @throws InvocationTargetException 
+	 * @throws IllegalArgumentException 
+	 * @throws SecurityException 
+	 * @throws NoSuchMethodException 
 	 */
-	public static void makeCritter(String critter_class_name) throws InvalidCritterException {
+	public static void makeCritter(String critter_class_name) throws InvalidCritterException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		try {
-			Class<?> type= Class.forName(critter_class_name); //gets the name of the critter class
-			Critter critter= (Critter)type.newInstance();
+
+			Class<?> critterType= Class.forName(critter_class_name); //gets the name of the critter class
+			Constructor<?> newConstructor = critterType.getConstructor();
+			Critter critter = (Critter) newConstructor.newInstance();
 			critter.x_coord=getRandomInt(Params.world_width); //random x value
 			critter.y_coord=getRandomInt(Params.world_height);//random y value
 			critter.energy=Params.start_energy;
@@ -390,24 +398,28 @@ public abstract class Critter {
 		System.out.print("+\n");
 		
 		for(int x=0; x<Params.world_width; x++){
-			String set=" "; //create a set variable that we will later print
-			if(x==0){
-				set="|";
+			String set="  "; //create a set variable that we will later print
+			//if(x==0){
+				//set="|";
 				//System.out.print("|");
-			}
-			if(x==Params.world_width-1){
-				set="|\n";
+			//}
+			//if(x==Params.world_width-1){
+				//set="|\n";
 				//System.out.print("|\n");
-			}
+			//}
+			System.out.print("|");
 			for (int y=0;y<Params.world_height;y++){
+				
 				for(Critter c: population){
 					if(x==c.x_coord && y==c.y_coord){
 						set=c.toString();
 						//System.out.print(c.toString());
 					}
 				}
+				System.out.print(set);
 			}
-			System.out.print(set);
+			
+			System.out.print("|\n");
 		}
 		System.out.print("+");
 		for(int x=0;x<Params.world_width-2;x++){
