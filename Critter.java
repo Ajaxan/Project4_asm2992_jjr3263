@@ -12,7 +12,6 @@
  */
 package assignment4;
 
-import java.io.InvalidClassException;
 import java.util.List;
 
 /* see the PDF for descriptions of the methods and fields in this class
@@ -46,18 +45,173 @@ public abstract class Critter {
 	
 	private int energy = 0;
 	protected int getEnergy() { return energy; }
+	protected void setEnergy(int x) {energy = x;}
 	
 	private int x_coord;
 	private int y_coord;
 	
 	protected final void walk(int direction) {
+		switch (direction) {
+			case 0: {
+				this.x_coord++; 
+				break;
+			}
+			case 1: {
+				this.x_coord++;
+				this.y_coord--; 
+				break;
+			}
+			case 2: {
+				this.y_coord--;
+				break;
+			}
+			case 3: {
+				this.y_coord--;
+				this.x_coord--;
+				break;
+			}
+			case 4: {
+				this.x_coord--;
+				break;
+			}
+			case 5: {
+				this.x_coord--;
+				this.y_coord++;
+				break;
+			}
+			case 6: {
+				this.y_coord++;
+				break;
+			}
+			case 7: {
+				this.y_coord++;
+				this.x_coord++;
+				break;
+			}
+		}
+		if(this.x_coord > Params.world_width) {
+			this.x_coord-=Params.world_width;
+		}
+		if(this.x_coord < 0) {
+			this.x_coord+=Params.world_width;
+		}
+		if(this.y_coord > Params.world_height) {
+			this.y_coord-=Params.world_height;
+		}
+		if(this.y_coord < 0) {
+			this.y_coord+=Params.world_height;
+		}
 	}
 	
 	protected final void run(int direction) {
-		
+		switch (direction) {
+			case 0: {
+				this.x_coord+=2; 
+				break;
+			}
+			case 1: {
+				this.x_coord+=2;
+				this.y_coord-=2; 
+				break;
+			}
+			case 2: {
+				this.y_coord-=2;
+				break;
+			}
+			case 3: {
+				this.y_coord-=2;
+				this.x_coord-=2;
+				break;
+			}
+			case 4: {
+				this.x_coord-=2;
+				break;
+			}
+			case 5: {
+				this.x_coord-=2;
+				this.y_coord+=2;
+				break;
+			}
+			case 6: {
+				this.y_coord+=2;
+				break;
+			}
+			case 7: {
+				this.y_coord+=2;
+				this.x_coord+=2;
+				break;
+			}
+		}
+		if(this.x_coord > Params.world_width) {
+			this.x_coord-=Params.world_width;
+		}
+		if(this.x_coord < 0) {
+			this.x_coord+=Params.world_width;
+		}
+		if(this.y_coord > Params.world_height) {
+			this.y_coord-=Params.world_height;
+		}
+		if(this.y_coord < 0) {
+			this.y_coord+=Params.world_height;
+		}
 	}
 	
 	protected final void reproduce(Critter offspring, int direction) {
+		if(this.getEnergy() < Params.min_reproduce_energy || this.getEnergy() == 0) {
+			return;
+		}
+		offspring.setEnergy(this.getEnergy()/2);
+		switch (direction) {
+			case 0: {
+				offspring.x_coord++; 
+				break;
+			}
+			case 1: {
+				offspring.x_coord++;
+				offspring.y_coord--; 
+				break;
+			}
+			case 2: {
+				offspring.y_coord--;
+				break;
+			}
+			case 3: {
+				offspring.y_coord--;
+				offspring.x_coord--;
+				break;
+			}
+			case 4: {
+				offspring.x_coord--;
+				break;
+			}
+			case 5: {
+				offspring.x_coord--;
+				offspring.y_coord++;
+				break;
+			}
+			case 6: {
+				offspring.y_coord++;
+				break;
+			}
+			case 7: {
+				offspring.y_coord++;
+				offspring.x_coord++;
+				break;
+			}	
+		}
+		if(this.x_coord > Params.world_width) {
+			this.x_coord-=Params.world_width;
+		}
+		if(this.x_coord < 0) {
+			this.x_coord+=Params.world_width;
+		}
+		if(this.y_coord > Params.world_height) {
+			this.y_coord-=Params.world_height;
+		}
+		if(this.y_coord < 0) {
+			this.y_coord+=Params.world_height;
+		}
+		babies.add(offspring);
 	}
 
 	public abstract void doTimeStep();
@@ -69,8 +223,7 @@ public abstract class Critter {
 	 * an InvalidCritterException must be thrown.
 	 * (Java weirdness: Exception throwing does not work properly if the parameter has lower-case instead of
 	 * upper. For example, if craig is supplied instead of Craig, an error is thrown instead of
-	 * an Exception.)
-	 * @param critter_class_name
+	 * an Exception.)	 * @param critter_class_name
 	 * @throws InvalidCritterException
 	 */
 	public static void makeCritter(String critter_class_name) throws InvalidCritterException {
@@ -91,9 +244,7 @@ public abstract class Critter {
 		catch (InstantiationException e) {
 			throw new InvalidCritterException(critter_class_name);
 		}
-		
 	}
-		
 	
 	/**
 	 * Gets a list of critters of a specific type.
@@ -202,6 +353,33 @@ public abstract class Critter {
 	}
 	
 	public static void worldTimeStep() {
+		for(Critter c: population) {
+			c.doTimeStep();
+		}
+		for(Critter c1: population) {
+			for(Critter c2: population) {
+				if(c1.x_coord == c2.x_coord && c1.y_coord == c2.y_coord) {
+					if(c1.fight(c2.toString()) && c2.fight(c1.toString())) {
+						if(Critter.getRandomInt(c1.getEnergy()) > Critter.getRandomInt(c2.getEnergy())) {
+							population.remove(c2);
+						} else {
+							population.remove(c1);
+						}
+					}
+				}
+			}
+		}
+		for(Critter c: babies) {
+			population.add(c);
+			babies.remove(c);
+		}
+		for(Critter c: population) {
+			if(c.energy <= 0) {
+				population.remove(c);
+			}
+		}
+		
+		
 	}
 	
 	public static void displayWorld() {
@@ -238,5 +416,6 @@ public abstract class Critter {
 		System.out.print("+\n");
 		
 		
+	
 	}
 }
