@@ -68,8 +68,73 @@ public class Main {
 
         /* Do not alter the code above for your submission. */
         /* Write your code below. */
+        boolean run = true;
         
-        System.out.println("GLHF");
+        while(run) {
+        	if(kb.hasNext()) {
+        		String command = kb.next();
+        		if(command.equalsIgnoreCase("quit")) {
+            		System.out.print("Thanks for using CritterWorld!");
+            		run = false;
+            	} else if (command.equalsIgnoreCase("show")) {
+            		Critter.displayWorld();
+            	} else if (command.equalsIgnoreCase("step")) {
+            		if(kb.hasNext()) {
+            			int steps = Integer.parseInt(kb.next());
+            			while(steps > 0) {
+            				Critter.worldTimeStep();
+            				steps--;
+            			}
+            		} else {
+            			Critter.worldTimeStep();
+            		}
+            	} else if (command.equalsIgnoreCase("seed")) {
+            		if(kb.hasNext()) {
+            			Critter.setSeed(Integer.parseInt(kb.next()));
+            		} else {
+            			System.out.print("No seed included! Ignoring command.");
+            		}
+            	} else if (command.equalsIgnoreCase("make")) {
+            		if(kb.hasNext()) {
+            			String critterType = kb.next();
+            			if(kb.hasNext()) {
+            				int critters = Integer.parseInt(kb.next());
+                			while(critters > 0) {
+                				try {
+    								Critter.makeCritter(critterType);
+    							} catch (InvalidCritterException e) {
+    								System.out.print("error processing: make " + critterType + " " + critters);
+    							}
+                				critters--;
+                			}            			
+            			} else {
+            				try {
+								Critter.makeCritter(critterType);
+							} catch (InvalidCritterException e) {
+								System.out.print("error processing: make " + critterType);
+							}
+            			}
+            			
+            		} else {
+            			System.out.print("No critter type included! Ignoring command.");
+            		}
+            		
+            	} else if (command.equalsIgnoreCase("stats")) {
+            		if(kb.hasNext()) {
+            			String critterType = kb.next();
+            			try {
+							Critter.getInstances(critterType);
+						} catch (InvalidCritterException e) {
+							System.out.print("error processing: stats " + critterType);
+						}
+            		} else {
+            			System.out.print("No critter type included! Ignoring command");
+            		}
+            		
+            	}
+        	}
+        	
+        }
         
         /* Write your code above */
         System.out.flush();
