@@ -12,6 +12,7 @@
  */
 package assignment4;
 
+import java.io.InvalidClassException;
 import java.util.List;
 
 /* see the PDF for descriptions of the methods and fields in this class
@@ -73,7 +74,26 @@ public abstract class Critter {
 	 * @throws InvalidCritterException
 	 */
 	public static void makeCritter(String critter_class_name) throws InvalidCritterException {
+		try {
+			Class<?> type= Class.forName(critter_class_name); //gets the name of the critter class
+			Critter critter= (Critter)type.newInstance();
+			critter.x_coord=getRandomInt(Params.world_width); //random x value
+			critter.y_coord=getRandomInt(Params.world_height);//random y value
+			critter.energy=Params.start_energy;
+			population.add(critter);
+		}
+		catch(ClassNotFoundException e){
+			throw new InvalidCritterException(critter_class_name);
+		}
+		catch(IllegalAccessException e){
+			throw new InvalidCritterException(critter_class_name);
+		} 
+		catch (InstantiationException e) {
+			throw new InvalidCritterException(critter_class_name);
+		}
+		
 	}
+		
 	
 	/**
 	 * Gets a list of critters of a specific type.
@@ -83,6 +103,16 @@ public abstract class Critter {
 	 */
 	public static List<Critter> getInstances(String critter_class_name) throws InvalidCritterException {
 		List<Critter> result = new java.util.ArrayList<Critter>();
+		try{
+			for (Critter c: population){
+				if (Class.forName(critter_class_name).isInstance(c)) {
+						result.add(c);
+					}
+			}
+		}
+		catch(ClassNotFoundException e){
+			throw new InvalidCritterException(critter_class_name);
+		}
 	
 		return result;
 	}
@@ -167,10 +197,46 @@ public abstract class Critter {
 	 * Clear the world of all critters, dead and alive
 	 */
 	public static void clearWorld() {
+		population.clear();
+		babies.clear();
 	}
 	
 	public static void worldTimeStep() {
 	}
 	
-	public static void displayWorld() {}
+	public static void displayWorld() {
+		System.out.print("+");
+		for(int x=0;x<Params.world_width-2;x++){
+			System.out.print("-");
+		}
+		System.out.print("+\n");
+		
+		for(int x=0; x<Params.world_width; x++){
+			String set=" "; //create a set variable that we will later print
+			if(x==0){
+				set="|";
+				//System.out.print("|");
+			}
+			if(x==Params.world_width-1){
+				set="|\n";
+				//System.out.print("|\n");
+			}
+			for (int y=0;y<Params.world_height;y++){
+				for(Critter c: population){
+					if(x==c.x_coord && y==c.y_coord){
+						set=c.toString();
+						//System.out.print(c.toString());
+					}
+				}
+			}
+			System.out.print(set);
+		}
+		System.out.print("+");
+		for(int x=0;x<Params.world_width-2;x++){
+			System.out.print("-");
+		}
+		System.out.print("+\n");
+		
+		
+	}
 }
