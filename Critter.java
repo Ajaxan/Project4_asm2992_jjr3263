@@ -392,13 +392,13 @@ public abstract class Critter {
 	
 	public static void displayWorld() {
 		System.out.print("+");
-		for(int x=0;x<Params.world_width-2;x++){
+		for(int x=0;x<Params.world_width;x++){
 			System.out.print("-");
 		}
 		System.out.print("+\n");
 		
-		for(int x=0; x<Params.world_width; x++){
-			String set="  "; //create a set variable that we will later print
+		for(int y=0; y<Params.world_height; y++){
+			String set=" "; //create a set variable that we will later print
 			//if(x==0){
 				//set="|";
 				//System.out.print("|");
@@ -408,7 +408,7 @@ public abstract class Critter {
 				//System.out.print("|\n");
 			//}
 			System.out.print("|");
-			for (int y=0;y<Params.world_height;y++){
+			for (int x=0;x<Params.world_width;x++){
 				
 				for(Critter c: population){
 					if(x==c.x_coord && y==c.y_coord){
@@ -422,7 +422,7 @@ public abstract class Critter {
 			System.out.print("|\n");
 		}
 		System.out.print("+");
-		for(int x=0;x<Params.world_width-2;x++){
+		for(int x=0;x<Params.world_width;x++){
 			System.out.print("-");
 		}
 		System.out.print("+\n");
