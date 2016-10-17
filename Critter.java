@@ -26,6 +26,7 @@ public abstract class Critter {
 	private static String myPackage;
 	private	static List<Critter> population = new java.util.ArrayList<Critter>();
 	private static List<Critter> babies = new java.util.ArrayList<Critter>();
+	private static List<Critter> dead = new java.util.ArrayList<Critter>();
 
 	// Gets the package name.  This assumes that Critter and its subclasses are all in the same package.
 	static {
@@ -53,6 +54,7 @@ public abstract class Critter {
 	private int y_coord;
 	
 	protected final void walk(int direction) {
+		this.setEnergy(this.getEnergy()-Params.walk_energy_cost);
 		switch (direction) {
 			case 0: {
 				this.x_coord++; 
@@ -106,6 +108,7 @@ public abstract class Critter {
 	}
 	
 	protected final void run(int direction) {
+		this.setEnergy(this.getEnergy()-Params.run_energy_cost);
 		switch (direction) {
 			case 0: {
 				this.x_coord+=2; 
@@ -162,7 +165,10 @@ public abstract class Critter {
 		if(this.getEnergy() < Params.min_reproduce_energy || this.getEnergy() == 0) {
 			return;
 		}
+		System.out.println("Baby Time: " + this.getEnergy() + " Energy");
 		offspring.setEnergy(this.getEnergy()/2);
+		this.setEnergy(this.getEnergy()-offspring.getEnergy());
+		System.out.println("New Energy: " + this.getEnergy() + "\nOffspring Energy: " + offspring.getEnergy());
 		switch (direction) {
 			case 0: {
 				offspring.x_coord++; 
@@ -234,10 +240,10 @@ public abstract class Critter {
 	 */
 	public static void makeCritter(String critter_class_name) throws InvalidCritterException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		try {
-
-			Class<?> critterType= Class.forName(critter_class_name); //gets the name of the critter class
+			Class<?> critterType= Class.forName("assignment4."+critter_class_name); //gets the name of the critter class
 			Constructor<?> newConstructor = critterType.getConstructor();
-			Critter critter = (Critter) newConstructor.newInstance();
+			Object object = newConstructor.newInstance();
+			Critter critter  = (Critter)object;
 			critter.x_coord=getRandomInt(Params.world_width); //random x value
 			critter.y_coord=getRandomInt(Params.world_height);//random y value
 			critter.energy=Params.start_energy;
@@ -262,9 +268,12 @@ public abstract class Critter {
 	 */
 	public static List<Critter> getInstances(String critter_class_name) throws InvalidCritterException {
 		List<Critter> result = new java.util.ArrayList<Critter>();
+		//System.out.print("I got here");
 		try{
 			for (Critter c: population){
-				if (Class.forName(critter_class_name).isInstance(c)) {
+				//System.out.print("I got here too");
+				if (Class.forName("assignment4."+critter_class_name).isInstance(c)) {
+					//System.out.print("I even got here");
 						result.add(c);
 					}
 			}
@@ -284,6 +293,7 @@ public abstract class Critter {
 		System.out.print("" + critters.size() + " critters as follows -- ");
 		java.util.Map<String, Integer> critter_count = new java.util.HashMap<String, Integer>();
 		for (Critter crit : critters) {
+			System.out.println(crit.getEnergy());
 			String crit_string = crit.toString();
 			Integer old_count = critter_count.get(crit_string);
 			if (old_count == null) {
@@ -360,34 +370,91 @@ public abstract class Critter {
 		babies.clear();
 	}
 	
-	public static void worldTimeStep() {
+	public static void worldTimeStep() throws IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, InvalidCritterException {
 		for(Critter c: population) {
 			c.doTimeStep();
 		}
 		for(Critter c1: population) {
 			for(Critter c2: population) {
-				if(c1.x_coord == c2.x_coord && c1.y_coord == c2.y_coord) {
-					if(c1.fight(c2.toString()) && c2.fight(c1.toString())) {
-						if(Critter.getRandomInt(c1.getEnergy()) > Critter.getRandomInt(c2.getEnergy())) {
-							population.remove(c2);
-						} else {
-							population.remove(c1);
-						}
+				if(c1.x_coord == c2.x_coord && c1.y_coord == c2.y_coord && !(c1.equals(c2))) {
+					if(c1 instanceof Algae) {
+						dead.add(c1);
+						c2.setEnergy(c2.getEnergy() + c1.getEnergy()/2);
+					} else if(c2 instanceof Algae){
+						dead.add(c2);
+						c1.setEnergy(c1.getEnergy() + c2.getEnergy()/2);
+					} else {
+						System.out.println("A Fight has occured at (" + c1.x_coord + "," + c1.y_coord + ") -- " + c1.toString() + " vs " +c2.toString());
+						
+							int critter1Strength = 0;
+							int critter2Strength = 0;
+							if(c1.fight(c2.toString())) {
+								if(c1.getEnergy() <= 0) {
+									critter1Strength = 0;
+								} else {
+									critter1Strength = Critter.getRandomInt(c1.getEnergy());
+								}
+							} else {
+								critter1Strength = 0;
+							}
+							if(c2.fight(c1.toString())) {
+								if(c2.getEnergy() <= 0) {
+									critter2Strength = 0;
+								} else {
+									critter2Strength = Critter.getRandomInt(c2.getEnergy());
+								}
+								
+							} else {
+								critter2Strength = 0;
+							}
+							if(c1.x_coord == c2.x_coord && c1.y_coord == c2.y_coord) {
+								if(critter1Strength > critter2Strength) {
+									System.out.println(c1.toString() + " Wins! (First Critter)");
+									c2.setEnergy(0);
+									dead.add(c2);
+									c1.setEnergy(c1.getEnergy() + c2.getEnergy()/2);
+								} else {
+									System.out.println(c2.toString() + " Wins! (Second Critter)");
+									dead.add(c1);
+									c1.setEnergy(0);
+									c2.setEnergy(c2.getEnergy() + c1.getEnergy()/2);
+								}
+							}
 					}
 				}
 			}
 		}
+		System.out.println("Babies: "+ babies.toString());
 		for(Critter c: babies) {
 			population.add(c);
-			babies.remove(c);
 		}
+		babies.clear();
 		for(Critter c: population) {
-			if(c.energy <= 0) {
-				population.remove(c);
+			if(c.getEnergy() <= 0) {
+				dead.add(c);
+			}
+		}
+		//for(Critter c: dead) {
+		//	System.out.println(c.toString());
+		//}
+		System.out.println("Population: "+population.toString());
+		population.removeAll(dead);
+		System.out.println("Population: "+population.toString());
+		dead.clear();
+		
+		
+		for(Critter c: population) {
+			if(c instanceof Algae) {
+				//System.out.print(c.toString() + "PhotoSynthezied!\n");
+				c.setEnergy(c.getEnergy()+Params.photosynthesis_energy_amount);
 			}
 		}
 		
-		
+		int makeAlgae = Params.refresh_algae_count;
+		while(makeAlgae > 0) {
+			Critter.makeCritter("Algae");
+			makeAlgae--;
+		}
 	}
 	
 	public static void displayWorld() {
@@ -399,17 +466,9 @@ public abstract class Critter {
 		
 		for(int y=0; y<Params.world_height; y++){
 			String set=" "; //create a set variable that we will later print
-			//if(x==0){
-				//set="|";
-				//System.out.print("|");
-			//}
-			//if(x==Params.world_width-1){
-				//set="|\n";
-				//System.out.print("|\n");
-			//}
 			System.out.print("|");
 			for (int x=0;x<Params.world_width;x++){
-				
+				set = " ";
 				for(Critter c: population){
 					if(x==c.x_coord && y==c.y_coord){
 						set=c.toString();

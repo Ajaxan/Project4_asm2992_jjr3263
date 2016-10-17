@@ -13,6 +13,7 @@
 package assignment4; // cannot be in default package
 import java.util.Scanner;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 
 
 /*
@@ -39,8 +40,13 @@ public class Main {
      * Main method.
      * @param args args can be empty.  If not empty, provide two parameters -- the first is a file name, 
      * and the second is test (for test output, where all output to be directed to a String), or nothing.
+     * @throws InvalidCritterException 
+     * @throws SecurityException 
+     * @throws NoSuchMethodException 
+     * @throws InvocationTargetException 
+     * @throws IllegalArgumentException 
      */
-    public static void main(String[] args) { 
+    public static void main(String[] args) throws IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, InvalidCritterException { 
         if (args.length != 0) {
             try {
                 inputFile = args[0];
@@ -97,20 +103,23 @@ public class Main {
             	} else if (command.equalsIgnoreCase("make")) {
             		if(kb.hasNext()) {
             			String critterType = kb.next();
+
             			if(kb.hasNext()) {
             				int critters = Integer.parseInt(kb.next());
+
                 			while(critters > 0) {
                 				try {
     								Critter.makeCritter(critterType);
-    							} catch (InvalidCritterException e) {
-    								System.out.print("error processing: make " + critterType + " " + critters);
+    							} catch (InvalidCritterException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+    								System.out.println("error processing: make " + critterType + " " + critters);
+    								break;
     							}
                 				critters--;
                 			}            			
             			} else {
             				try {
 								Critter.makeCritter(critterType);
-							} catch (InvalidCritterException e) {
+							} catch (InvalidCritterException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
 								System.out.print("error processing: make " + critterType);
 							}
             			}
@@ -123,14 +132,13 @@ public class Main {
             		if(kb.hasNext()) {
             			String critterType = kb.next();
             			try {
-							Critter.getInstances(critterType);
+							Critter.runStats(Critter.getInstances(critterType));
 						} catch (InvalidCritterException e) {
 							System.out.print("error processing: stats " + critterType);
 						}
             		} else {
             			System.out.print("No critter type included! Ignoring command");
             		}
-            		
             	}
         	}
         	
