@@ -53,6 +53,14 @@ public abstract class Critter {
 	private int x_coord;
 	private int y_coord;
 	
+	
+	/**
+	 * This method handles what happens when a Critter decides to run/move 
+	 * inside the world. Everything from energy costs to world wrap 
+	 * boundaries are settled here.
+	 * 
+	 * @param direction The direction in which the Critter wishes to move.
+	 */
 	protected final void walk(int direction) {
 		this.setEnergy(this.getEnergy()-Params.walk_energy_cost);
 		switch (direction) {
@@ -106,7 +114,13 @@ public abstract class Critter {
 			this.y_coord+=Params.world_height;
 		}
 	}
-	
+	/**
+	 * This method handles what happens when a Critter decides to run/move 
+	 * inside the world. Everything from energy costs to world wrap 
+	 * boundaries are settled here.
+	 * 
+	 * @param direction The direction in which the Critter wishes to move.
+	 */
 	protected final void run(int direction) {
 		this.setEnergy(this.getEnergy()-Params.run_energy_cost);
 		switch (direction) {
@@ -161,14 +175,22 @@ public abstract class Critter {
 		}
 	}
 	
+	/**
+	 * This method handles the reproducing of a critter in the world. It also makes sure that any 
+	 * coordinates wrap around the world appropriately.
+	 * 
+	 * @param offspring 	When a critter calls this method it must pass to us the offspring it created
+	 * 						so that we can add it to the list of new babies and decide where to place it 
+	 * 						in the world.
+	 * @param direction		This parameter is used to determine where the parent wants its offspring 
+	 * 						placed around it.
+	 */
 	protected final void reproduce(Critter offspring, int direction) {
 		if(this.getEnergy() < Params.min_reproduce_energy || this.getEnergy() == 0) {
 			return;
 		}
-		System.out.println("Baby Time: " + this.getEnergy() + " Energy");
 		offspring.setEnergy(this.getEnergy()/2);
 		this.setEnergy(this.getEnergy()-offspring.getEnergy());
-		System.out.println("New Energy: " + this.getEnergy() + "\nOffspring Energy: " + offspring.getEnergy());
 		switch (direction) {
 			case 0: {
 				offspring.x_coord++; 
@@ -240,7 +262,7 @@ public abstract class Critter {
 	 */
 	public static void makeCritter(String critter_class_name) throws InvalidCritterException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		try {
-			Class<?> critterType= Class.forName("assignment4."+critter_class_name); //gets the name of the critter class
+			Class<?> critterType= Class.forName(myPackage+"."+critter_class_name); //gets the name of the critter class
 			Constructor<?> newConstructor = critterType.getConstructor();
 			Object object = newConstructor.newInstance();
 			Critter critter  = (Critter)object;
@@ -268,12 +290,9 @@ public abstract class Critter {
 	 */
 	public static List<Critter> getInstances(String critter_class_name) throws InvalidCritterException {
 		List<Critter> result = new java.util.ArrayList<Critter>();
-		//System.out.print("I got here");
 		try{
 			for (Critter c: population){
-				//System.out.print("I got here too");
-				if (Class.forName("assignment4."+critter_class_name).isInstance(c)) {
-					//System.out.print("I even got here");
+				if (Class.forName(myPackage+"."+critter_class_name).isInstance(c)) {
 						result.add(c);
 					}
 			}
@@ -369,94 +388,169 @@ public abstract class Critter {
 		population.clear();
 		babies.clear();
 	}
-	
+	/**
+	 * This is the main event loop method. Whenever the simulation is 
+	 * run this method is called. It handles all parts of the simulation.
+	 * 
+	 * @throws InvalidCritterException 	This exception is thrown when an 
+	 * 									invalid critter class is called.
+	 */
 	public static void worldTimeStep() throws IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, InvalidCritterException {
+		runTimeSteps();
+		runEncounters();
+		runRestCosts();
+		runPhotosynthesis();
+		runAddBabies();
+		runRemoveDead();
+	}
+	
+	/**
+	 * This method handles each critters doTimeStep() method which determines 
+	 * what a Critter will do inside the simulation. Often this includes 
+	 * moving or reproducing.
+	 */
+	public static void runTimeSteps() {
 		for(Critter c: population) {
 			c.doTimeStep();
 		}
+	}
+	/**
+	 * This method is the most intense part of the code. It handles all interactions 
+	 * between Critters. This includes handling fights, as in how each creature will 
+	 * respond to them, and whether they are capable of responding how they want to.
+	 */
+	public static void runEncounters() {
 		for(Critter c1: population) {
 			for(Critter c2: population) {
-				if(c1.x_coord == c2.x_coord && c1.y_coord == c2.y_coord && !(c1.equals(c2))) {
-					if(c1 instanceof Algae) {
-						dead.add(c1);
-						c2.setEnergy(c2.getEnergy() + c1.getEnergy()/2);
-					} else if(c2 instanceof Algae){
-						dead.add(c2);
-						c1.setEnergy(c1.getEnergy() + c2.getEnergy()/2);
-					} else {
-						System.out.println("A Fight has occured at (" + c1.x_coord + "," + c1.y_coord + ") -- " + c1.toString() + " vs " +c2.toString());
-						
-							int critter1Strength = 0;
-							int critter2Strength = 0;
-							if(c1.fight(c2.toString())) {
-								if(c1.getEnergy() <= 0) {
-									critter1Strength = 0;
-								} else {
-									critter1Strength = Critter.getRandomInt(c1.getEnergy());
-								}
-							} else {
+				int cx1=c1.x_coord;
+				int cy1=c1.y_coord;
+				int cx2=c2.x_coord;
+				int cy2=c2.y_coord;
+				if(cx1 == cx2 && cy1 == cy2 && !(c1.equals(c2))) {
+					boolean decision1=c1.fight(c2.toString());
+					boolean decision2= c2.fight(c1.toString());
+					int critter1Strength = 0;
+					int critter2Strength = 0;
+					if(!(isRunSafe(c1))){ 											//check if run is safe
+						c1.x_coord=cx1; 											//if not change coordinates back to original and they must fight
+						c1.y_coord=cy1;
+					}
+					if(!(isRunSafe(c2))){
+						c2.x_coord=cx2;
+						c2.y_coord=cy2;
+					}
+					
+					if(c1.x_coord == c2.x_coord && c1.y_coord == c2.y_coord) { 		//Re-check to make sure no one ran.
+						if(decision1) {												// Determine each critters fighting power
+							if(c1.getEnergy() <= 0) {
 								critter1Strength = 0;
-							}
-							if(c2.fight(c1.toString())) {
-								if(c2.getEnergy() <= 0) {
-									critter2Strength = 0;
-								} else {
-									critter2Strength = Critter.getRandomInt(c2.getEnergy());
-								}
-								
 							} else {
+								critter1Strength = Critter.getRandomInt(c1.getEnergy());
+							}
+						} else {
+							critter1Strength = 0;
+						}
+						if(decision2) {												// Determine each critters fighting power
+							if(c2.getEnergy() <= 0) {
 								critter2Strength = 0;
+							} else {
+								critter2Strength = Critter.getRandomInt(c2.getEnergy());
 							}
-							if(c1.x_coord == c2.x_coord && c1.y_coord == c2.y_coord) {
-								if(critter1Strength > critter2Strength) {
-									System.out.println(c1.toString() + " Wins! (First Critter)");
-									c2.setEnergy(0);
-									dead.add(c2);
-									c1.setEnergy(c1.getEnergy() + c2.getEnergy()/2);
-								} else {
-									System.out.println(c2.toString() + " Wins! (Second Critter)");
-									dead.add(c1);
-									c1.setEnergy(0);
-									c2.setEnergy(c2.getEnergy() + c1.getEnergy()/2);
-								}
-							}
+
+						} else {
+							critter2Strength = 0;
+						}
+						if(critter1Strength > critter2Strength) { 					//Fight!
+							c1.setEnergy(c1.getEnergy() + c2.getEnergy()/2);
+							c2.setEnergy(0);
+							dead.add(c2);
+							
+						} else {
+							c2.setEnergy(c2.getEnergy() + c1.getEnergy()/2);
+							c1.setEnergy(0);
+							dead.add(c1);
+						}
 					}
 				}
 			}
 		}
-		System.out.println("Babies: "+ babies.toString());
-		for(Critter c: babies) {
-			population.add(c);
-		}
-		babies.clear();
+	}
+	/**
+	 * This method simply applies the rest cost to each Critter during each WorldTimeStep.
+	 */
+	public static void runRestCosts() {
 		for(Critter c: population) {
-			if(c.getEnergy() <= 0) {
-				dead.add(c);
-			}
+			c.setEnergy(c.getEnergy()-Params.rest_energy_cost);
 		}
-		//for(Critter c: dead) {
-		//	System.out.println(c.toString());
-		//}
-		System.out.println("Population: "+population.toString());
-		population.removeAll(dead);
-		System.out.println("Population: "+population.toString());
-		dead.clear();
-		
-		
+	}
+	
+	/**
+	 * This method handles Algae in the simulation. It applies photosynthesis energy 
+	 * gained to algae and also adds new algae to the world.
+	 * 
+	 * @throws InvalidCritterException 	If an incorrect String is used as a critter it 
+	 * 									will throw this error and ask for new input, 
+	 * 									ignoring old input.
+	 */
+	public static void runPhotosynthesis() throws IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, InvalidCritterException {
 		for(Critter c: population) {
 			if(c instanceof Algae) {
-				//System.out.print(c.toString() + "PhotoSynthezied!\n");
 				c.setEnergy(c.getEnergy()+Params.photosynthesis_energy_amount);
 			}
 		}
-		
 		int makeAlgae = Params.refresh_algae_count;
 		while(makeAlgae > 0) {
 			Critter.makeCritter("Algae");
 			makeAlgae--;
 		}
 	}
+	/**
+	 * This adds all babies made during world time step to the population list
+	 * and then it clears the babies list for the next WorldTimeStep.
+	 */
+	public static void runAddBabies() {
+		for(Critter c: babies) {
+			population.add(c);
+		}
+		babies.clear();
+	}
+	/**
+	 * This method finds all creatures with no energy left, declares them dead 
+	 * and removes them from the population list.
+	 */
+	public static void runRemoveDead() {
+		for(Critter c: population) {
+			if(c.getEnergy() <= 0) {
+				dead.add(c);
+			}
+		}
+		population.removeAll(dead);
+		dead.clear();
+	}
 	
+	/**
+	 * This method checks to make sure the space a critter has moved to is 
+	 * not occupied currently.
+	 * @param critter 	This is the critter we are checking to make sure is not 
+	 * 					sharing a space with any other critters
+	 * @return			We return true or false depending on whether the space 
+	 * 					is occupied by another Critter
+	 */
+	public static boolean isRunSafe(Critter critter){
+		for(Critter c: population){
+			if (!(c==critter)){
+				if (c.x_coord==critter.x_coord && c.y_coord==critter.y_coord){
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * This method displays the world and each critter in it by using symbols 
+	 * to represent all Critters.
+	 */
 	public static void displayWorld() {
 		System.out.print("+");
 		for(int x=0;x<Params.world_width;x++){
@@ -472,12 +566,10 @@ public abstract class Critter {
 				for(Critter c: population){
 					if(x==c.x_coord && y==c.y_coord){
 						set=c.toString();
-						//System.out.print(c.toString());
 					}
 				}
 				System.out.print(set);
 			}
-			
 			System.out.print("|\n");
 		}
 		System.out.print("+");
@@ -485,8 +577,9 @@ public abstract class Critter {
 			System.out.print("-");
 		}
 		System.out.print("+\n");
-		
-		
-	
+
 	}
+	
+	
+	
 }

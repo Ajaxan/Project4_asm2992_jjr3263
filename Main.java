@@ -11,9 +11,12 @@
  * Fall 2016
  */
 package assignment4; // cannot be in default package
+import java.util.List;
 import java.util.Scanner;
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 
 /*
@@ -45,8 +48,10 @@ public class Main {
      * @throws NoSuchMethodException 
      * @throws InvocationTargetException 
      * @throws IllegalArgumentException 
+     * @throws ClassNotFoundException 
+     * @throws IllegalAccessException 
      */
-    public static void main(String[] args) throws IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, InvalidCritterException { 
+    public static void main(String[] args) throws IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, InvalidCritterException, ClassNotFoundException, IllegalAccessException { 
         if (args.length != 0) {
             try {
                 inputFile = args[0];
@@ -85,7 +90,7 @@ public class Main {
             	} else if (command.equalsIgnoreCase("show")) {
             		Critter.displayWorld();
             	} else if (command.equalsIgnoreCase("step")) {
-            		if(kb.hasNext()) {
+            		if(kb.hasNextInt()) {
             			int steps = Integer.parseInt(kb.next());
             			while(steps > 0) {
             				Critter.worldTimeStep();
@@ -104,7 +109,7 @@ public class Main {
             		if(kb.hasNext()) {
             			String critterType = kb.next();
 
-            			if(kb.hasNext()) {
+            			if(kb.hasNextInt()) {
             				int critters = Integer.parseInt(kb.next());
 
                 			while(critters > 0) {
@@ -132,7 +137,11 @@ public class Main {
             		if(kb.hasNext()) {
             			String critterType = kb.next();
             			try {
-							Critter.runStats(Critter.getInstances(critterType));
+            				Class<?> critterClassType= Class.forName(myPackage+"."+critterType);
+            				List<Critter> list = Critter.getInstances(critterType);
+            				Class<?>[] types = {List.class};
+            				Method runStats = critterClassType.getMethod("runStats", types);
+            				runStats.invoke(null, list);
 						} catch (InvalidCritterException e) {
 							System.out.print("error processing: stats " + critterType);
 						}
