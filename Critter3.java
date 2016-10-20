@@ -2,6 +2,11 @@ package assignment4;
 
 public class Critter3 extends Critter {
 	
+	/**
+	 * This critter is essentially a bunny. It reproduces very often, moves very quickly, and runs from all its fights.
+	 * This critter uses the same system of genetics as Craigs to become much more effective at navigating the world around it.
+	 */
+	
 	@Override
 	public String toString() { return "3"; }
 	

@@ -2,6 +2,10 @@ package assignment4;
 
 public class Critter4  extends Critter {
 	
+	/**
+	 * This critter is essentially a rock. It is nearly unbeatable as it has a constant energy of ten thousand.
+	 * Also, it doesn't move or reproduce so if for some reason all rocks do get beaten, they will not come back.
+	 */
 	private static int fights = 0;
 	@Override
 	public String toString() { return "4"; }
