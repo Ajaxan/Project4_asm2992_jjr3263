@@ -1,5 +1,16 @@
 package assignment4;
-
+/* CRITTERS Main.java
+ * EE422C Project 4 submission by
+ * Replace <...> with your actual data.
+ * Joshua Rothfus
+ * jjr3263
+ * 16445
+ * Adi Miller
+ * asm2992
+ * 16480
+ * Slip days used: <0>
+ * Fall 2016
+ */
 //this critter tries to walk away in the one direction when it encounters algae and other wise fights all other critters.
 //It is a carnivore because it only eat other critters that are not algae.
 public class Critter2 extends Critter{
