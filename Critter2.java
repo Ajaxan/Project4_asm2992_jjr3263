@@ -5,7 +5,7 @@ package assignment4;
 public class Critter2 extends Critter{
 
 	@Override
-	public String toString() { return "&"; }
+	public String toString() { return "2"; }
 	
 	private static final int GENE_TOTAL = 24;
 	private int[] genes = new int[8];
